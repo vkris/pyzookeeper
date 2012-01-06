@@ -1,20 +1,23 @@
 import zookeeper, threading
 import sys, os, time
 from threading import Thread
+from pyzookeeper import log
 
 ZOO_OPEN_ACL_UNSAFE = {"perms":0x1f, "scheme":"world", "id" :"anyone"};
 
 class LeaderElection(Thread):
     '''
     This class uses zookeeper library to do leader election. 
-    Input is the zookeeper's ip and port in ip:port format.
+    Input :
+        zookeeper's ip and port in ip:port[,ip2:port2,..] format. 
+        node name. This will be a persistant node.
     '''
-    def __init__(self, zk_ip):
+    def __init__(self, zk_ip, nodename):
         # Frequency to check for change of status ( in seconds )
         self.frequency = 10
         self.connected = False   
         # Name of the master znode
-        self.queuename = '/spider-election'  
+        self.nodename = nodename
         # Used for checking if connection is established.
         self.cv = threading.Condition()
         self.isLeader = False
@@ -24,7 +27,7 @@ class LeaderElection(Thread):
         # Acquire condition variable so that the program waits until
         # notified by watcher.
         def watcher(handle, type, state, path):
-            print "Connected to zookeeper"
+            log.info("  Connected to zookeeper")
             self.cv.acquire()
             self.connected = True
             self.cv.notify()
@@ -36,15 +39,19 @@ class LeaderElection(Thread):
         # in the next check.
         self.cv.wait(10.0)
         if not self.connected:
-            print "Cannot connect to the zookeeper instance. is a server running on "+zk_ip
+            log.error("Cannot connect to the zookeeper instance. is a server running on "+zk_ip)
             sys.exit()
         self.cv.release()
         
         # Create the master zNode here.
         try:
-            zookeeper.create(self.handle,self.queuename,"Election Master Node", [ZOO_OPEN_ACL_UNSAFE],0)
+            # master node cannot be ephemeral because you cannot create childrens for ephemeral nodes.
+            zookeeper.create(self.handle,self.nodename,"Election Master Node", [ZOO_OPEN_ACL_UNSAFE],0)
         except zookeeper.NodeExistsException:
-            print "Election node already exists"
+            log.debug("Election node already exists")
+        except zookeeper.BadArgumentsException:
+            log.error('Did you forget a / at the begging of the queue name?')
+            sys.exit(0)
 
     def nominateCandidate(self):
         '''
@@ -53,32 +60,32 @@ class LeaderElection(Thread):
         It is both sequential and ephemeral ( last parameter ).
         Sequential - to keep track for elections.  Ephemeral- to detect failure of a node.
         '''
-        self.candidateName = zookeeper.create(self.handle, self.queuename+"/candidate-", "I don't care",
+        self.candidateName = zookeeper.create(self.handle, self.nodename+"/candidate-", "I don't care",
                              [ZOO_OPEN_ACL_UNSAFE],3)
 
-    def leaderExists(self, handle, queuename):
+    def leaderExists(self, handle, nodename):
         '''
         Check if leader exists
         '''
-        return False if zookeeper.exists( handle, queuename) is None else True        
+        return False if zookeeper.exists( handle, nodename) is None else True        
 
-    def electLeader(self, handle, queuename, candidateName):
+    def electLeader(self, handle, nodename, candidateName):
         '''
         This method elects the new leader from the list of candidates.
         The candidate with the lowest sequence Id gets to be the leader.
         '''
-        candidates = zookeeper.get_children(handle, queuename)
+        candidates = zookeeper.get_children(handle, nodename)
         myName = candidateName.rsplit('/',1)[1]
         leader = sorted(candidates)[0]
         if ( myName == leader):
             try:
-                zookeeper.create(handle, queuename+"/leader",myName,[ZOO_OPEN_ACL_UNSAFE],zookeeper.EPHEMERAL)
-                print "I won, I am leader now :)"
+                zookeeper.create(handle, nodename+"/leader",myName,[ZOO_OPEN_ACL_UNSAFE],zookeeper.EPHEMERAL)
+                log.info(" I won the elections, I am leader now :)")
                 self.isLeader = True
             except zookeeper.NodeExistsException,e:
-                print e
+                log.info(e)
         else:
-            print "I failed in the elections"
+            log.info(" I failed in the elections :(")
             self.isLeader = False
 
     def run(self):
@@ -87,9 +94,9 @@ class LeaderElection(Thread):
         '''
         self.nominateCandidate()
         while(True):
-            if ( not self.leaderExists(self.handle, self.queuename+"/leader")):
-                print "No leader, Need an election right now.."
-                self.electLeader(self.handle, self.queuename, self.candidateName)            
+            if ( not self.leaderExists(self.handle, self.nodename+"/leader")):
+                log.info(" No leader, Need an election right now..")
+                self.electLeader(self.handle, self.nodename, self.candidateName)            
             time.sleep(float(self.frequency))
 
     def checkLeader(self):
@@ -105,28 +112,4 @@ class LeaderElection(Thread):
 
 
 if __name__=="__main__":
-    # Leader will execute the parameter passed below
-    if ( len( sys.argv) < 4):
-        print 'Usage:\n python '+ sys.argv[0]+' zookeeperIP:Port leader_script candidate_script'
-        sys.exit(0)
-    ipAndPort = sys.argv[1]
-    leader_script = sys.argv[2]
-    cand_script = sys.argv[3]
-    e = LeaderElection(ipAndPort)
-    e.setDaemon(True)
-    e.start() # runElection()
-    # The below variable is to make sure the leader/candidate
-    # script is executed only once every change of status.
-    previousScript = ''
-    while(True):
-        if(e.checkLeader() and previousScript != 'leader' ):
-            print 'Execute Leader script'
-            os.system(leader_script)
-            previousScript = 'leader'
-        elif( not (e.checkLeader()) and previousScript != 'candidate'):
-            print 'Execute candidate script'
-            os.system(cand_script)
-            previousScript = 'candidate'
-        else:
-            print "Nothing to do..so sleeping.."
-            time.sleep(10)
+    pass
