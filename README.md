@@ -1,5 +1,5 @@
 #pyzookeeper
-Algorithms for Zookeeper.
+Algorithms for Zookeeper using python.
  
 ## Introduction
 pyZooKeeper is a library that implemnts generic applications using the zookeeper.
