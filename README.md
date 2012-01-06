@@ -9,7 +9,7 @@ In order to use this library, it assumes you have apache zookeeper running.
 ## Algorithms
   * Leader Election
   
- This algorithm detects failure of a node and switches the leadership accordingly. 
+    This algorithm detects failure of a node and switches the leadership accordingly. 
 
  
 NOTE: This library infact uses zk-zookeeper-static library.  This is how it interacts
