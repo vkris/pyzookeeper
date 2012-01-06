@@ -1,5 +1,0 @@
-This is not a zookeeper library for python.  This implements algorithms that can be used with Zookeeper.
-
-cd to pyzookeeper directory and run, 
-python setup.py install ( Make sure you have setuptools installed)
-navigate to the examples directory and start using them right away!
