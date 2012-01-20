@@ -63,11 +63,11 @@ class LeaderElection(Thread):
         self.candidateName = zookeeper.create(self.handle, self.nodename+"/candidate-", "I don't care",
                              [ZOO_OPEN_ACL_UNSAFE],3)
 
-    def leaderExists(self, handle, nodename):
+    def leaderExists(self, nodename):
         '''
         Check if leader exists
         '''
-        return False if zookeeper.exists( handle, nodename) is None else True        
+        return False if zookeeper.exists( self.handle, nodename+"/leader") is None else True        
 
     def electLeader(self, handle, nodename, candidateName):
         '''
@@ -94,7 +94,7 @@ class LeaderElection(Thread):
         '''
         self.nominateCandidate()
         while(True):
-            if ( not self.leaderExists(self.handle, self.nodename+"/leader")):
+            if ( not self.leaderExists(self.nodename)):
                 log.info(" No leader, Need an election right now..")
                 self.electLeader(self.handle, self.nodename, self.candidateName)            
             time.sleep(float(self.frequency))
