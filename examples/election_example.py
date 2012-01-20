@@ -7,7 +7,7 @@ if __name__=="__main__":
     # Leader will execute the parameter passed below
     if ( len( sys.argv) < 4):
         print 'Usage:\n python '+ sys.argv[0]+' zookeeperIP:Port leader_script candidate_script \n'
-        + 'zookeeperIP:Port - Point to a zookeeper instance'
+        print 'zookeeperIP:Port - Point to a zookeeper instance'
         sys.exit(0)
     ipAndPort = sys.argv[1]
     leader_script = sys.argv[2]

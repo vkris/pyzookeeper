@@ -6,12 +6,14 @@ from pyzookeeper import log
 if __name__=="__main__":
     # Leader will execute the parameter passed below
     if ( len( sys.argv) < 3):
-        print 'Usage:\n python '+ sys.argv[0]+' zookeeperIP:Port failure_script'
+        print 'Usage:\n python '+ sys.argv[0]+' zookeeperIP:Port zNodeName failure_script'
         print 'zookeeperIP:Port - Point to a zookeeper instance'
+        print 'zNodeName - A name to store in zookeeper'
         sys.exit(0)
     ipAndPort = sys.argv[1]
-    failure_script = sys.argv[2]
-    zNodeName = '/spider-election'
+    zNodeName = '/'+sys.argv[2]
+    failure_script = sys.argv[3]
+
     e = election(ipAndPort,zNodeName)
     # The below variable is to make sure the leader/candidate
     # script is executed only once every change of status.
