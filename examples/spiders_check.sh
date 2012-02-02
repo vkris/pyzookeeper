@@ -1,0 +1,3 @@
+/usr/local/bin/python /usr/local/ws/pyzookeeper/examples/leader_check.py "zkIP1:zkIP2:.." spinn3r-election  "/usr/bin/python /usr/local/ws/Lydia/spinn3r/spinn3r_reporter_mail.py 'Spinn3r Spider Machine Failure' 'Either Spinn3r spider machine is down or the zookeeper process in spinn3r machien failed.'"
+/usr/local/bin/python /usr/local/ws/pyzookeeper/examples/leader_check.py "zkIP1:zkIP2:.." gnip-election "/usr/bin/python /usr/local/ws/Lydia/spinn3r/spinn3r_reporter_mail.py 'GNIP Spider Machine Failure' 'Either Spinn3r spider machine is down or the zookeeper process in spinn3r machien failed.'"
+

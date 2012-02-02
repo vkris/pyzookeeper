@@ -1,0 +1,1 @@
+nohup python election_example.py "zkIP1:zkIP2" 'bash /usr/local/ws/pyzookeeper/examples/leader_script.sh' 'bash /usr/local/ws/pyzookeeper/examples/candidate_script.sh' > /mnt2/spinn3r_zookeeper.log 2>&1 &
